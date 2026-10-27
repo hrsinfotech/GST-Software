@@ -1,0 +1,9 @@
+﻿services:
+  invoice-extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hrs-ai-ap-invoice-extractor
+    ports:
+      - "127.0.0.1:8098:8000"
+    restart: unless-stopped
