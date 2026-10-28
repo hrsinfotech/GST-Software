@@ -1,96 +1,200 @@
 ﻿# HRS Tech AI AP Automation
 
-AI-powered Accounts Payable (AP) automation for invoice processing, data extraction, validation, and accounting workflows.
+AI-assisted accounts payable automation for invoice intake, OCR-based data extraction, GST-related validation, vendor and payment workflows, and accounting support.
 
-## Project Overview
+## Architecture
 
-This project is designed to help automate invoice-processing tasks and support more efficient accounts payable operations.
+| Component | Technology | Local address |
+|---|---|---|
+| Web application | JavaScript, Vite | http://127.0.0.1:5173 |
+| AP API | Node.js, TypeScript, Express | http://127.0.0.1:8099 |
+| API health check | Express, PostgreSQL | http://127.0.0.1:8099/health |
+| Invoice extractor | Python, FastAPI, OCR | http://127.0.0.1:8098 |
+| Database | PostgreSQL 16 | 127.0.0.1:5437 |
 
-### Key Components
+The web development server proxies `/ap-api` to the AP API and `/extract-api` to the invoice extractor.
 
-- **Web Application:** Frontend interface built with JavaScript, HTML, CSS, and Vite.
-- **API Service:** Node.js and TypeScript service for application API functionality.
-- **Invoice Extractor:** Python service for OCR, GST-related invoice data extraction, validation, and Excel export.
-- **Database:** Database initialization scripts and Docker Compose configuration.
-- **Documentation and Notices:** Project references and third-party license notices.
+## Prerequisites
 
-### Repository Structure
+Install or configure the following software:
 
-```text
-hrs-tech-ai-ap-automation/
-├── apps/
-│   └── web/                  # Web application
-├── database/                 # Database scripts and configuration
-├── services/
-│   ├── api/                  # Node.js / TypeScript API
-│   └── invoice-extractor/     # Python invoice extraction service
-├── storage/                  # Application storage
-├── reference/                # Reference materials
-├── THIRD-PARTY-NOTICES/      # Third-party license notices
-├── .gitignore
-└── README.md
-```
+- **Git for Windows** — to clone, update, and version the source code.
+- **Node.js 20 or newer** — use an active LTS release; npm is included with Node.js.
+- **Docker Desktop for Windows** — start Docker Desktop and use Linux containers.
+- **Python 3.12** — needed only if developing or running the invoice extractor outside Docker.
+- **PostgreSQL client tools (`psql`)** — optional if you use the PostgreSQL client inside the database container instead.
+- **Web browser** — for the local web application.
 
-## Technology Stack
+No separate local PostgreSQL server is required when using the supplied Docker Compose database.
 
-- JavaScript, HTML, CSS, and Vite
-- Node.js and TypeScript
-- Python
-- OCR and invoice data extraction
-- GST-related data validation
-- Excel export
-- Docker Compose
-- Git and GitHub
-
-## Getting Started
-
-### Prerequisites
-
-Install the required versions of Node.js, npm, Python, and Docker Desktop, depending on which services you intend to run.
-
-### 1. Start the Web Application
-
-Open PowerShell in the project root and run:
+Verify the main tools in PowerShell:
 
 ```powershell
-cd apps/web
-npm install
+git --version
+node --version
+npm --version
+docker --version
+docker compose version
+```
+
+For local Python development:
+
+```powershell
+python --version
+```
+
+## Repository layout
+
+```text
+apps/
+  web/                         Vite web application
+services/
+  api/                         Node.js / TypeScript API
+  invoice-extractor/            Python OCR and extraction service
+database/
+  docker-compose.yml            PostgreSQL service
+  init.sql                      Initial database schema
+  migrations/                   Incremental database migrations
+  .env                          Local database credentials (not committed)
+storage/                        Local runtime storage
+reference/                      Reference material
+THIRD-PARTY-NOTICES/             Third-party license notices
+```
+
+## First-time setup
+
+Run commands from the repository root unless otherwise specified.
+
+### 1. Configure database credentials
+
+Create `database/.env` locally. Use the variable names expected by the Compose file:
+
+```dotenv
+POSTGRES_DB=hrs_ai_ap
+POSTGRES_USER=hrs_ai_ap_app
+POSTGRES_PASSWORD=replace_with_a_strong_local_password
+```
+
+Use the actual database name, username, and password for your environment if they differ. Do not commit this file or share its contents.
+
+### 2. Start PostgreSQL
+
+```powershell
+docker compose -f .\database\docker-compose.yml up -d database
+docker compose -f .\database\docker-compose.yml ps
+```
+
+The database is exposed on `127.0.0.1:5437` and persists data in the named Docker volume `hrs-ai-ap-postgres-data`.
+
+**Data safety:** Do not run `docker compose down -v`, delete the named volume, or recreate the database volume when existing invoice records must be preserved.
+
+### 3. Install and start the API
+
+Open a PowerShell terminal:
+
+```powershell
+Set-Location .\services\api
+npm ci
+npm run typecheck
 npm run dev
 ```
 
-Open the local URL printed by Vite in your browser. The development server commonly uses `http://localhost:5173/`.
+The API reads database settings from `database/.env` when started with `services/api` as the working directory. Its default port is `8099`.
 
-### 2. Start the API Service
+Health check:
 
 ```powershell
-cd services/api
-npm install
-npm run
+Invoke-RestMethod http://127.0.0.1:8099/health
 ```
 
-Review the available scripts printed by npm and the service configuration before starting the API.
+Keep this terminal running during development.
 
-### 3. Run the Invoice Extractor
+### 4. Install and start the web application
 
-Review `services/invoice-extractor/requirements.txt` and its Docker configuration before installing dependencies or starting the service.
+Open a second PowerShell terminal:
 
-The invoice extractor includes OCR, GST data extraction, invoice validation, and Excel export modules.
+```powershell
+Set-Location .\apps\web
+npm ci
+npm run dev
+```
 
-### 4. Database
+Open http://127.0.0.1:5173 in your browser.
 
-Review `database/docker-compose.yml` and `database/init.sql` before starting the database. Configure credentials through local environment variables; do not commit secrets to Git.
+To create a production web build:
 
-## Security Notes
+```powershell
+npm run build
+```
 
-- Never commit `.env` files, passwords, access tokens, private keys, or production credentials.
-- Validate extracted invoice data before using it for accounting or payment decisions.
-- Review third-party license notices before redistributing or deploying dependencies.
-- Protect financial and vendor information with appropriate access controls.
+### 5. Start the invoice extractor
 
-## Development Status
+From the repository root, open another PowerShell terminal:
 
-This repository contains the initial project source code. Verify each service's configuration, dependencies, and tests before deploying to production.
+```powershell
+docker compose -f .\services\invoice-extractor\docker-compose.yml up -d --build
+docker compose -f .\services\invoice-extractor\docker-compose.yml ps
+```
 
-## License
+Health check:
 
-Review the `THIRD-PARTY-NOTICES/` directory for third-party license terms. Licensing for the complete project should be defined separately by the project owner.
+```powershell
+Invoke-RestMethod http://127.0.0.1:8098/health
+```
+
+The extractor uses Python, FastAPI, Tesseract OCR, Poppler, and the dependencies listed in `services/invoice-extractor/requirements.txt`.
+
+To inspect its logs:
+
+```powershell
+docker compose -f .\services\invoice-extractor\docker-compose.yml logs --tail 100
+```
+
+## Database initialization and migrations
+
+The database Compose file mounts `database/init.sql` for initialization of a new PostgreSQL data directory. PostgreSQL's initialization scripts are not automatically rerun on an already initialized data volume.
+
+Incremental migrations are stored in `database/migrations/`. Review each SQL file and confirm the current schema and backup status before applying it. Apply each migration only once, in the intended order, using a database-aware migration process or the PostgreSQL client.
+
+Do not reset the database to apply a migration. Back up important records before schema changes, and verify the resulting tables and application workflows afterward.
+
+## Useful development commands
+
+```powershell
+# API type checking
+Set-Location .\services\api
+npm run typecheck
+
+# Web production build
+Set-Location ..\..\apps\web
+npm run build
+
+# Database service status (from repository root)
+docker compose -f .\database\docker-compose.yml ps
+
+# Invoice extractor logs (from repository root)
+docker compose -f .\services\invoice-extractor\docker-compose.yml logs --tail 100
+```
+
+## Troubleshooting
+
+- If a port is occupied, identify the owning process before changing the configured port.
+- If the API cannot connect to PostgreSQL, verify `database/.env`, the database container health, and the `PGHOST` / `PGPORT` settings.
+- If OCR extraction fails, inspect extractor logs and verify that the uploaded file format is supported.
+- If a web request fails, inspect the browser console and check that the API and extractor services are running.
+- Do not stop or recreate unrelated Payroll or AMS containers while troubleshooting this application.
+
+## Security and data protection
+
+- Never commit `.env` files, passwords, API tokens, private keys, or production credentials.
+- Keep database dumps, local backups, temporary reports, and runtime logs out of source control unless a specific, sanitized artifact is intentionally approved for versioning.
+- Validate invoice amounts, GST fields, vendor details, and payment information before accounting or payment decisions.
+- Apply appropriate authentication, authorization, audit logging, encryption, retention, and backup controls before production use.
+
+## Project status
+
+This repository is under active development. Verify the application workflows, database migrations, automated checks, and deployment security before using it for production accounting or payment operations.
+
+## Licensing
+
+Review `THIRD-PARTY-NOTICES/` for third-party notices. The project owner should define and document the license for the complete application separately.

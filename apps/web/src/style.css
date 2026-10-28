@@ -71,3 +71,13 @@
   .review-actions { flex-direction: column-reverse; }
   .review-actions button { width: 100%; }
 }
+/* Vendor and payment forms */
+.form-panel{margin-top:18px;padding-bottom:18px}
+.data-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:0 19px}
+.data-form label{display:flex;flex-direction:column;gap:7px;color:#65748b;font-size:11px;font-weight:650;min-width:0}
+.data-form input,.data-form select{width:100%;min-width:0;border:1px solid #dce4ef;border-radius:7px;background:#fff;padding:11px 12px;color:#24334b;font:inherit;font-size:12px}
+.data-form input:focus,.data-form select:focus{outline:2px solid #b7d2ff;border-color:#3766e8}
+.form-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;grid-column:1/-1;margin-top:3px}
+.form-help{grid-column:1/-1;margin:0;color:#8490a4;font-size:11px;line-height:1.6}
+.empty-state{padding:18px 20px;margin:0;color:#8793a6;font-size:12px}
+@media(max-width:700px){.data-form{grid-template-columns:1fr}.form-actions,.form-help{grid-column:1}}

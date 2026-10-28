@@ -35,3 +35,15 @@ storage/*
 
 # Third-party source pending licence review
 reference/hisaabo/
+
+# Local backups, database dumps, and diagnostic reports
+/backups/
+/database/backups/
+/validation-backup-*/
+/reports/
+*.dump
+*.sql.gz
+
+# Editor and configuration backups
+*.bak
+*.bak-*
